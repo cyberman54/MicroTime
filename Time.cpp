@@ -36,14 +36,17 @@
 #define TIMELIB_ENABLE_MILLIS
 #include "TimeLib.h"
 
-static tmElements_t tm;          // a cache of time elements
+// Convert days since epoch to week day. Sunday is day 1.
+#define DAYS_TO_WDAY(x) (((x) + 4) % 7) + 1
+
+static tmElements_t cacheElements;   // a cache of time elements
 static time_t cacheTime;   // the time the cache was updated
 static uint32_t syncInterval = 300;  // time sync will be attempted after this many seconds
 
 void refreshCache(time_t t) {
   if (t != cacheTime) {
-    breakTime(t, tm); 
-    cacheTime = t; 
+    breakTime(t, cacheElements);
+    cacheTime = t;
   }
 }
 
@@ -53,7 +56,7 @@ int hour() { // the hour now
 
 int hour(time_t t) { // the hour for the given time
   refreshCache(t);
-  return tm.Hour;  
+  return cacheElements.Hour;
 }
 
 int hourFormat12() { // the hour now in 12 hour format
@@ -62,12 +65,12 @@ int hourFormat12() { // the hour now in 12 hour format
 
 int hourFormat12(time_t t) { // the hour for the given time in 12 hour format
   refreshCache(t);
-  if( tm.Hour == 0 )
+  if( cacheElements.Hour == 0 )
     return 12; // 12 midnight
-  else if( tm.Hour  > 12)
-    return tm.Hour - 12 ;
+  else if( cacheElements.Hour  > 12)
+    return cacheElements.Hour - 12 ;
   else
-    return tm.Hour ;
+    return cacheElements.Hour ;
 }
 
 uint8_t isAM() { // returns true if time now is AM
@@ -92,7 +95,7 @@ int minute() {
 
 int minute(time_t t) { // the minute for the given time
   refreshCache(t);
-  return tm.Minute;  
+  return cacheElements.Minute;
 }
 
 int second() {
@@ -101,7 +104,7 @@ int second() {
 
 int second(time_t t) {  // the second for the given time
   refreshCache(t);
-  return tm.Second;
+  return cacheElements.Second;
 }
 
 int millisecond() {
@@ -116,7 +119,7 @@ int day(){
 
 int day(time_t t) { // the day for the given time (0-6)
   refreshCache(t);
-  return tm.Day;
+  return cacheElements.Day;
 }
 
 int weekday() {   // Sunday is day 1
@@ -125,7 +128,7 @@ int weekday() {   // Sunday is day 1
 
 int weekday(time_t t) {
   refreshCache(t);
-  return tm.Wday;
+  return cacheElements.Wday;
 }
    
 int month(){
@@ -134,7 +137,7 @@ int month(){
 
 int month(time_t t) {  // the month for the given time
   refreshCache(t);
-  return tm.Month;
+  return cacheElements.Month;
 }
 
 int year() {  // as in Processing, the full four digit year: (2009, 2010 etc) 
@@ -143,7 +146,7 @@ int year() {  // as in Processing, the full four digit year: (2009, 2010 etc)
 
 int year(time_t t) { // the year for the given time
   refreshCache(t);
-  return tmYearToCalendar(tm.Year);
+  return tmYearToCalendar(cacheElements.Year);
 }
 
 /*============================================================================*/	
@@ -172,7 +175,20 @@ void breakTime(time_t timeInput, tmElements_t &tm){
   time /= 60; // now it is hours
   tm.Hour = time % 24;
   time /= 24; // now it is days
-  tm.Wday = ((time + 4) % 7) + 1;  // Sunday is day 1 
+
+  // if the number of days since epoch matches cacheTime, then can take date
+  // elements from cacheElements and avoid expensive calculation.
+  if (time == (cacheTime / SECS_PER_DAY)) {
+    if (&tm != &cacheElements) {  // check whether tm is actually cacheElements
+      tm.Wday = cacheElements.Wday;
+      tm.Day = cacheElements.Day;
+      tm.Month = cacheElements.Month;
+      tm.Year = cacheElements.Year;
+    }
+    return;
+  }
+
+  tm.Wday = DAYS_TO_WDAY(time);
   
   year = 0;  
   days = 0;
@@ -297,20 +313,22 @@ void setTime(time_t t) {
   prevMillis = millis();  // restart counting from now (thanks to Korman for this fix)
 } 
 
-void setTime(int hr,int min,int sec,int dy, int mnth, int yr){
- // year can be given as full four digit year or two digts (2010 or 10 for 2010);  
- //it is converted to years since 1970
-  if( yr > 99)
-      yr = yr - 1970;
+void setTime(int hr, int min, int sec, int dy, int mnth, int yr) {
+  // year can be given as full four digit year or two digts (2010 or 10 for 2010);
+  // it is converted to years since 1970
+  if (yr > 99)
+      yr = CalendarYrToTm(yr);
   else
-      yr += 30;  
-  tm.Year = yr;
-  tm.Month = mnth;
-  tm.Day = dy;
-  tm.Hour = hr;
-  tm.Minute = min;
-  tm.Second = sec;
-  setTime(makeTime(tm));
+      yr = tmYearToY2k(yr);
+  cacheElements.Year = yr;
+  cacheElements.Month = mnth;
+  cacheElements.Day = dy;
+  cacheElements.Hour = hr;
+  cacheElements.Minute = min;
+  cacheElements.Second = sec;
+  cacheTime = makeTime(cacheElements);
+  cacheElements.Wday = DAYS_TO_WDAY(cacheTime / SECS_PER_DAY);
+  setTime(cacheTime);
 }
 
 void adjustTime(long adjustment) {
