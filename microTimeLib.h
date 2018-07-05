@@ -110,6 +110,7 @@ int     second();          // the second now
 int     second(time_t t);  // the second for the given time
 #ifdef TIMELIB_ENABLE_MILLIS
 int     millisecond();     // the millisecond now
+int     microsecond();
 #endif
 int     day();             // the day now 
 int     day(time_t t);     // the day for the given time
@@ -120,13 +121,15 @@ int     month(time_t t);   // the month for the given time
 int     year();            // the full four digit year: (2009, 2010 etc) 
 int     year(time_t t);    // the year for the given time
 
-time_t now();              // return the current time as seconds since Jan 1 1970 
-#ifdef TIMELIB_ENABLE_MILLIS
-time_t now(uint32_t& sysTimeMillis); // return the current time as seconds and milliseconds since Jan 1 1970
-#endif
+time_t  now();              // return the current time as seconds since Jan 1 1970 
+//#ifdef  TIMELIB_ENABLE_MILLIS
+time_t  now(uint32_t& sysTimeMicros); // return the current time as seconds and microseconds since Jan 1 1970
+void    syncToPPS();
+//#endif
 void    setTime(time_t t);
 void    setTime(int hr,int min,int sec,int day, int month, int yr);
 void    adjustTime(long adjustment);
+
 
 /* date strings */ 
 #define dt_MAX_STRING_LEN 9 // length of longest date string (excluding terminating null)

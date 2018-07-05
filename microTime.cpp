@@ -34,7 +34,7 @@
 #endif
 
 #define TIMELIB_ENABLE_MILLIS
-#include "TimeLib.h"
+#include "microTimeLib.h"
 
 // Convert days since epoch to week day. Sunday is day 1.
 #define DAYS_TO_WDAY(x) (((x) + 4) % 7) + 1
@@ -110,7 +110,14 @@ int second(time_t t) {  // the second for the given time
 int millisecond() {
   uint32_t ms;
   now(ms);
+  ms = ms / 1000;
   return (int)ms;
+}
+
+int microsecond() {
+  uint32_t us;
+  now(us);
+  return (int)us;
 }
 
 int day(){
@@ -258,7 +265,7 @@ time_t makeTime(const tmElements_t &tm){
 /* Low level system time functions  */
 
 static uint32_t sysTime = 0;
-static uint32_t prevMillis = 0;
+static uint32_t prevMicros = 0;
 static uint32_t nextSyncTime = 0;
 static timeStatus_t Status = timeNotSet;
 
@@ -270,19 +277,26 @@ time_t sysUnsyncedTime = 0; // the time sysTime unadjusted by sync
 #endif
 
 
-time_t now() {
-  uint32_t sysTimeMillis;
-  return now(sysTimeMillis);
+void SyncToPPS()
+{
+  
+  now();
+  //prevMicros = micros();
 }
 
-time_t now(uint32_t& sysTimeMillis) {
+time_t now() {
+  uint32_t sysTimeMicros;
+  return now(sysTimeMicros);
+}
+
+time_t now(uint32_t& sysTimeMicros) {
   // calculate number of seconds passed since last call to now()
-  while ((sysTimeMillis = millis() - prevMillis) >= 1000) {
-    // millis() and prevMillis are both unsigned ints thus the subtraction will
+  while ((sysTimeMicros = micros() - prevMicros) >= 1000000) {
+    // micros() and prevMicros are both unsigned ints thus the subtraction will
     // always result in a positive difference. This is OK since it corrects for
-    // wrap-around and millis() is monotonic.
+    // wrap-around and micros() is monotonic.
     sysTime++;
-    prevMillis += 1000;	
+    prevMicros += 1000000;	
 #ifdef TIME_DRIFT_INFO
     sysUnsyncedTime++; // this can be compared to the synced time to measure long term drift     
 #endif
@@ -310,7 +324,7 @@ void setTime(time_t t) {
   sysTime = (uint32_t)t;  
   nextSyncTime = (uint32_t)t + syncInterval;
   Status = timeSet;
-  prevMillis = millis();  // restart counting from now (thanks to Korman for this fix)
+  prevMicros = micros();  // restart counting from now (thanks to Korman for this fix)
 } 
 
 void setTime(int hr, int min, int sec, int dy, int mnth, int yr) {
