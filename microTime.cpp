@@ -34,6 +34,8 @@
 #endif
 
 #define TIMELIB_ENABLE_MILLIS
+#define usePPS
+
 #include "microTimeLib.h"
 
 // Convert days since epoch to week day. Sunday is day 1.
@@ -276,13 +278,14 @@ getExternalTime getTimePtr;  // pointer to external sync function
 time_t sysUnsyncedTime = 0; // the time sysTime unadjusted by sync  
 #endif
 
-
+#ifdef usePPS
 void SyncToPPS()
 {
-  
-  now();
-  //prevMicros = micros();
+  sysTime++;
+  prevMicros = micros();
+  //Serial.println(prevMicros);  
 }
+#endif
 
 time_t now() {
   uint32_t sysTimeMicros;
@@ -291,7 +294,7 @@ time_t now() {
 
 time_t now(uint32_t& sysTimeMicros) {
   // calculate number of seconds passed since last call to now()
-  while ((sysTimeMicros = micros() - prevMicros) >= 1000000) {
+  while ((sysTimeMicros = micros() - prevMicros) >= 1000000) { 
     // micros() and prevMicros are both unsigned ints thus the subtraction will
     // always result in a positive difference. This is OK since it corrects for
     // wrap-around and micros() is monotonic.
@@ -304,6 +307,7 @@ time_t now(uint32_t& sysTimeMicros) {
   if (nextSyncTime <= sysTime) {
     if (getTimePtr != 0) {
       time_t t = getTimePtr();
+      
       if (t != 0) {
         setTime(t);
       } else {
@@ -324,7 +328,9 @@ void setTime(time_t t) {
   sysTime = (uint32_t)t;  
   nextSyncTime = (uint32_t)t + syncInterval;
   Status = timeSet;
-  prevMicros = micros();  // restart counting from now (thanks to Korman for this fix)
+  #ifndef usePPS
+    prevMicros = micros();  // restart counting from now (thanks to Korman for this fix)
+  #endif
 } 
 
 void setTime(int hr, int min, int sec, int dy, int mnth, int yr) {

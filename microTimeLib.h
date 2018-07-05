@@ -21,6 +21,8 @@
 typedef unsigned long time_t;
 #endif
 
+#define usePPS
+#define TIMELIB_ENABLE_MILLIS
 
 // This ugly hack allows us to define C++ overloaded functions, when included
 // from within an extern "C", as newlib's sys/stat.h does.  Actually it is
@@ -122,10 +124,13 @@ int     year();            // the full four digit year: (2009, 2010 etc)
 int     year(time_t t);    // the year for the given time
 
 time_t  now();              // return the current time as seconds since Jan 1 1970 
-//#ifdef  TIMELIB_ENABLE_MILLIS
+#ifdef  TIMELIB_ENABLE_MILLIS
 time_t  now(uint32_t& sysTimeMicros); // return the current time as seconds and microseconds since Jan 1 1970
+
+#endif
+#ifdef usePPS
 void    syncToPPS();
-//#endif
+#endif
 void    setTime(time_t t);
 void    setTime(int hr,int min,int sec,int day, int month, int yr);
 void    adjustTime(long adjustment);
