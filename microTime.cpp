@@ -263,17 +263,16 @@ time_t now() {
 
 time_t now(uint32_t& sysTimeMicros) {
   // calculate number of seconds passed since last call to now()
-  while ((sysTimeMicros = micros() - prevMicros) >= 1000000) { 
-    // micros() and prevMicros are both unsigned ints thus the subtraction will
-    // always result in a positive difference. This is OK since it corrects for
-    // wrap-around and micros() is monotonic.
-    sysTime++;
-    prevMicros += 1000000;
+  uint32_t n_secs = (micros() - prevMicros) / 1000000U;
+  sysTime += n_secs;
+  prevMicros += n_secs * 1000000U;
+
 #ifdef TIME_DRIFT_INFO
-    sysUnsyncedTime++; // this can be compared to the synced time to measure long term drift     
+  sysUnsyncedTime++; // this can be compared to the synced time to measure long
+                     // term drift
 #endif
-  }
-  if (nextSyncTime <= sysTime) {
+
+if (sysTime - nextSyncTime < 2147483648U) {
     if (getTimePtr != 0) {
       time_t t = getTimePtr();
       if (t != 0) {
