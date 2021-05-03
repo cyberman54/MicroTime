@@ -125,7 +125,7 @@ time_t now();              // return the current time as seconds since Jan 1 197
 time_t  now(uint32_t& sysTimeMicros); // return the current time as seconds and microseconds since Jan 1 1970
 #endif
 #ifdef usePPS
-void    syncToPPS();
+void IRAM_ATTR SyncToPPS();
 #endif
 
 void    setTime(time_t t);
