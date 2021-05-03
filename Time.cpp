@@ -33,7 +33,10 @@
 #include <WProgram.h> 
 #endif
 
-#include "TimeLib.h"
+#define TIMELIB_ENABLE_MILLIS
+#define usePPS
+
+#include "microTimeLib.h"
 
 static tmElements_t tm;          // a cache of time elements
 static time_t cacheTime;   // the time the cache was updated
@@ -246,13 +249,28 @@ getExternalTime getTimePtr;  // pointer to external sync function
 time_t sysUnsyncedTime = 0; // the time sysTime unadjusted by sync  
 #endif
 
+#ifdef usePPS
+void SyncToPPS()
+{
+  sysTime++;
+  prevMicros = micros();
+}
+#endif
 
 time_t now() {
-	// calculate number of seconds passed since last call to now()
-  while (millis() - prevMillis >= 1000) {
-		// millis() and prevMillis are both unsigned ints thus the subtraction will always be the absolute value of the difference
+  uint32_t sysTimeMicros;
+  return now(sysTimeMicros);
+}
+
+time_t now(uint32_t& sysTimeMicros) {
+  // calculate number of seconds passed since last call to now()
+  while ((sysTimeMicros = micros() - prevMicros) >= 1000000) {
+  while ((sysTimeMicros = micros() - prevMicros) >= 1000000) { 
+    // micros() and prevMicros are both unsigned ints thus the subtraction will
+    // always result in a positive difference. This is OK since it corrects for
+    // wrap-around and micros() is monotonic.
     sysTime++;
-    prevMillis += 1000;	
+    prevMicros += 1000000;
 #ifdef TIME_DRIFT_INFO
     sysUnsyncedTime++; // this can be compared to the synced time to measure long term drift     
 #endif
@@ -280,7 +298,9 @@ void setTime(time_t t) {
   sysTime = (uint32_t)t;  
   nextSyncTime = (uint32_t)t + syncInterval;
   Status = timeSet;
-  prevMillis = millis();  // restart counting from now (thanks to Korman for this fix)
+  #ifndef usePPS
+    prevMicros = micros();  // restart counting from now (thanks to Korman for this fix)
+  #endif
 } 
 
 void setTime(int hr,int min,int sec,int dy, int mnth, int yr){
