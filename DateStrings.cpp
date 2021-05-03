@@ -19,7 +19,7 @@
 #define PROGMEM
 #endif
 
-#include "TimeLib.h"
+#include "microTimeLib.h"
 
  
 // the short strings for each day or month must be exactly dt_SHORT_STR_LEN
