@@ -263,7 +263,6 @@ time_t now() {
 
 time_t now(uint32_t& sysTimeMicros) {
   // calculate number of seconds passed since last call to now()
-  while ((sysTimeMicros = micros() - prevMicros) >= 1000000) {
   while ((sysTimeMicros = micros() - prevMicros) >= 1000000) { 
     // micros() and prevMicros are both unsigned ints thus the subtraction will
     // always result in a positive difference. This is OK since it corrects for
