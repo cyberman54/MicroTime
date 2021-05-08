@@ -1,5 +1,5 @@
 {
-    "name": "Time",
+    "name": "microTime",
     "description": "Time keeping library",
     "keywords": "Time, date, hour, minute, second, day, week, month, year, RTC",
     "authors": [
