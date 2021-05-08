@@ -7,15 +7,13 @@
             "name": "Michael Margolis"
         },
         {
-            "name": "Paul Stoffregen",
-            "email": "paul@pjrc.com",
-            "url": "http://www.pjrc.com",
+            "name": "cyberman54",
             "maintainer": true
         }
     ],
     "repository": {
         "type": "git",
-         "url": "https://github.com/PaulStoffregen/Time"
+         "url": "https://github.com/cyberman54/microTime"
     },
     "version": "1.6",
     "homepage": "http://playground.arduino.cc/Code/Time",
